@@ -1,5 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import orreryImage from "@/assets/orrery.jpg";
+import { useState } from "react";
+import { SanctumHeader } from "@/components/atlas/SanctumHeader";
+import { SentinelFeed } from "@/components/atlas/SentinelFeed";
+import { TimeScrubber } from "@/components/atlas/TimeScrubber";
+import { InterventionSimulator } from "@/components/atlas/InterventionSimulator";
+import { EvidenceDrawer } from "@/components/atlas/EvidenceDrawer";
+import { useRole } from "@/lib/atlas-context";
+import { drivers, roleProfiles, type Driver } from "@/lib/atlas-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -13,13 +21,6 @@ export const Route = createFileRoute("/")({
   component: CommandCenter,
 });
 
-const drivers = [
-  { label: "Water Stress", value: 82, status: "CRITICAL", critical: true },
-  { label: "Urban Growth", value: 64, status: "VOLATILE", critical: false },
-  { label: "Infra Lag", value: 41, status: "STABLE", critical: false },
-  { label: "Trust Decay", value: 56, status: "WATCH", critical: false },
-];
-
 const cascade = [
   { title: "Water Scarcity", note: "Aquifer depletion in Rift Valley triggers agricultural yield collapse.", tone: "brass" as const },
   { title: "Internal Migration", note: "Mass relocation to Nairobi exurbs strains informal infrastructure.", tone: "mid" as const },
@@ -27,92 +28,51 @@ const cascade = [
   { title: "Civil Unrest", note: null, tone: "dim" as const },
 ];
 
-const interventions = [
-  { title: "Desalination Network", delta: "+12.4%", state: "ready" as const },
-  { title: "Dense Zoning Policy", delta: "+8.1%", state: "ready" as const },
-  { title: "Mobile Currency Buffer", delta: "+6.7%", state: "ready" as const },
-  { title: "Modular Infra Grants", delta: "PENDING", state: "pending" as const },
-];
-
-const feed = [
-  {
-    time: "14:02 UTC",
-    source: "Signal",
-    body: "Satellite telemetry indicates unmapped groundwater extraction in Marsabit.",
-    risk: "ELEVATED",
-    traj: "DIVERGENT",
-    trajTone: "brass" as const,
-    dot: "brass" as const,
-  },
-  {
-    time: "12:48 UTC",
-    source: "Agent Orion",
-    body: "Synthetic debate concludes: demographic bulge in Mombasa necessitates immediate education subsidy.",
-    risk: "STABLE",
-    traj: "CONVERGENT",
-    trajTone: "jade" as const,
-    dot: "mid" as const,
-  },
-  {
-    time: "11:31 UTC",
-    source: "Agent Lyra",
-    body: "Capital flow contraction detected across East African development banks. Cross-correlated with 2009-K pattern.",
-    risk: "ELEVATED",
-    traj: "WATCH",
-    trajTone: "brass" as const,
-    dot: "brass" as const,
-  },
-  {
-    time: "09:15 UTC",
-    source: "Archive",
-    body: "Reference historical pattern '1992-G' identified in current fiscal volatility.",
-    risk: "—",
-    traj: "REFERENCE",
-    trajTone: "mid" as const,
-    dot: "dim" as const,
-  },
-];
-
-const timeMarks = [
-  { label: "−5y", active: false },
-  { label: "Now", active: true },
-  { label: "+5y", active: false },
-  { label: "+20y", active: false },
-];
-
 function CommandCenter() {
+  const { role } = useRole();
+  const profile = roleProfiles[role];
+  const [driverEvidence, setDriverEvidence] = useState<Driver | null>(null);
+
   return (
     <div className="min-h-screen bg-[--obsidian] text-zinc-300 selection:bg-[--brass]/30 pb-32">
-      {/* Sanctum Identity Header */}
-      <header className="border-b border-zinc-800/60 py-4 px-6">
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <div className="flex items-baseline gap-2">
-              <span className="font-serif text-xl font-medium tracking-tight text-zinc-100">
-                Atlas Sanctum
-              </span>
-              <span className="text-[10px] text-[--brass] uppercase tracking-widest px-1.5 py-0.5 border border-[--brass]/30 rounded-sm">
-                Authenticated
-              </span>
-            </div>
-            <nav className="hidden md:flex gap-6 text-zinc-500 text-xs uppercase tracking-widest">
-              <a href="#" className="hover:text-zinc-200 transition-colors">Observatory</a>
-              <a href="#" className="text-zinc-200 border-b border-[--brass]/60 pb-0.5">Command</a>
-              <a href="#" className="hover:text-zinc-200 transition-colors">Archive</a>
-            </nav>
+      <SanctumHeader />
+
+      <div className="max-w-screen-2xl mx-auto px-6 pt-6">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 px-5 py-4 flex flex-wrap items-center gap-x-8 gap-y-3">
+          <div className="flex-1 min-w-[280px]">
+            <p className="text-[10px] uppercase tracking-widest text-[--brass] mb-1">
+              {role} view
+            </p>
+            <p className="font-serif text-zinc-100 text-xl leading-tight text-pretty">
+              {profile.headline}
+            </p>
           </div>
-          <div className="flex items-center gap-4 text-zinc-500 text-xs">
-            <span className="flex items-center gap-2">
-              <span className="size-1.5 rounded-full bg-[--jade] animate-pulse" />
-              SIGNAL_STABLE
-            </span>
-            <div className="w-px h-4 bg-zinc-800" />
-            <span>AGENT_ORION: ACTIVE</span>
-            <div className="w-px h-4 bg-zinc-800" />
-            <span className="text-zinc-400">09:41:02 UTC</span>
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-zinc-500">
+              {profile.primaryMetric.label}
+            </p>
+            <p className="font-serif text-3xl text-zinc-100 leading-none mt-1">
+              {profile.primaryMetric.value}
+            </p>
+            <p className="text-[10px] text-zinc-500 mt-1">{profile.primaryMetric.sub}</p>
+          </div>
+          <div className="max-w-[260px]">
+            <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">
+              Watchlist
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {profile.watchlist.map((w) => (
+                <span
+                  key={w}
+                  className="text-[10px] text-zinc-400 border border-zinc-800 rounded-sm px-1.5 py-0.5"
+                >
+                  {w}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
-      </header>
+      </div>
 
       <main className="max-w-screen-2xl mx-auto p-6 grid grid-cols-12 gap-6">
         {/* Left Rail: Nation Focus */}
@@ -140,24 +100,32 @@ function CommandCenter() {
             </div>
             <div className="space-y-4">
               {drivers.map((d) => (
-                <div key={d.label} className="group">
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setDriverEvidence(d)}
+                  className="w-full text-left group"
+                >
                   <div className="flex justify-between text-[11px] mb-1.5">
                     <span className="text-zinc-500 group-hover:text-zinc-300 transition-colors">
                       {d.label}
                     </span>
-                    <span className={d.critical ? "text-[--brass]" : "text-zinc-400"}>
+                    <span className={d.status === "CRITICAL" ? "text-[--brass]" : "text-zinc-400"}>
                       {d.status}
                     </span>
                   </div>
                   <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
                     <div
-                      className={`h-full ${d.critical ? "bg-[--brass]" : "bg-zinc-500"}`}
+                      className={`h-full ${d.status === "CRITICAL" ? "bg-[--brass]" : "bg-zinc-500"}`}
                       style={{ width: `${d.value}%` }}
                     />
                   </div>
-                </div>
+                </button>
               ))}
             </div>
+            <p className="text-[10px] text-zinc-600 mt-4">
+              Click a driver to inspect evidence
+            </p>
           </section>
 
           <section>
@@ -226,132 +194,24 @@ function CommandCenter() {
             </div>
           </div>
 
-          <div className="p-6 bg-zinc-900/60 ring-1 ring-white/5 rounded-xl">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-[10px] uppercase tracking-widest text-zinc-500">
-                  Intervention Console
-                </h3>
-                <p className="font-serif text-zinc-200 text-lg mt-1">
-                  Possible futures, before action.
-                </p>
-              </div>
-              <button
-                type="button"
-                className="py-2 px-3 bg-[--brass] text-zinc-950 font-medium text-xs uppercase tracking-widest flex items-center gap-2 rounded-sm hover:brightness-110 transition"
-              >
-                <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Simulate
-              </button>
-            </div>
-            <div className="grid grid-cols-4 gap-3">
-              {interventions.map((i) => (
-                <div
-                  key={i.title}
-                  className="p-3 border border-zinc-800 rounded bg-[--obsidian] hover:border-zinc-700 transition-colors cursor-pointer"
-                >
-                  <p className="text-[11px] text-zinc-400 mb-2 leading-tight">{i.title}</p>
-                  <p
-                    className={
-                      i.state === "ready"
-                        ? "text-[--jade] text-sm"
-                        : "text-zinc-500 text-xs"
-                    }
-                  >
-                    {i.state === "ready" ? `${i.delta} Stability` : i.delta}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
+          <InterventionSimulator recommendedIds={profile.recommendedInterventionIds} />
         </section>
 
         {/* Right Rail: Sentinel Feed */}
         <aside className="col-span-3 border-l border-zinc-800/60 pl-6 flex flex-col gap-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-zinc-500 uppercase tracking-widest text-[10px]">
-              Sentinel Feed
-            </h2>
-            <span className="text-[10px] text-zinc-600">SIGNAL → RISK → TRAJ</span>
-          </div>
-          <div className="space-y-6">
-            {feed.map((item, idx) => (
-              <div key={item.time} className={idx > 0 ? "border-t border-zinc-900 pt-6" : ""}>
-                <div className="flex gap-2 items-center mb-2">
-                  <span
-                    className={`size-1.5 rounded-full ${
-                      item.dot === "brass"
-                        ? "bg-[--brass]"
-                        : item.dot === "mid"
-                          ? "bg-zinc-600"
-                          : "bg-zinc-800"
-                    }`}
-                  />
-                  <span className="text-[11px] text-zinc-500">
-                    {item.time} · {item.source}
-                  </span>
-                </div>
-                <p className="text-zinc-200 leading-snug mb-2 text-pretty text-[13px]">
-                  {item.body}
-                </p>
-                <div className="flex items-center gap-4 text-[10px] text-zinc-500 uppercase tracking-widest">
-                  <span>
-                    RISK: <span className="text-zinc-300">{item.risk}</span>
-                  </span>
-                  <span>
-                    TRAJ:{" "}
-                    <span className={item.trajTone === "brass" ? "text-[--brass]" : item.trajTone === "jade" ? "text-[--jade]" : "text-zinc-400"}>
-                      {item.traj}
-                    </span>
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <SentinelFeed />
         </aside>
       </main>
 
-      {/* Global Time Scrubber */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-[--obsidian]/95 backdrop-blur border-t border-zinc-800 py-5 px-12 z-50">
-        <div className="max-w-screen-2xl mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] uppercase tracking-widest text-zinc-500">
-              Temporal Projection
-            </span>
-            <span className="text-[10px] uppercase tracking-widest text-zinc-500">
-              Drag to navigate possible futures
-            </span>
-          </div>
-          <div className="relative flex items-center h-6">
-            <div className="absolute w-full h-px bg-zinc-800" />
-            <div className="absolute left-1/4 w-1/2 h-px bg-[--brass]/40" />
-            <div className="relative flex justify-between w-full">
-              {timeMarks.map((m) => (
-                <div key={m.label} className="flex flex-col items-center gap-2">
-                  <div
-                    className={
-                      m.active
-                        ? "size-3 rounded-full bg-[--brass] ring-4 ring-[--brass]/20"
-                        : "size-2 rounded-full bg-zinc-800 border border-zinc-700"
-                    }
-                  />
-                  <span
-                    className={
-                      m.active
-                        ? "text-zinc-200 text-[10px] font-medium"
-                        : "text-zinc-600 text-[10px]"
-                    }
-                  >
-                    {m.label}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </footer>
+      <TimeScrubber />
+
+      <EvidenceDrawer
+        open={!!driverEvidence}
+        onOpenChange={(v) => !v && setDriverEvidence(null)}
+        title={driverEvidence?.label ?? ""}
+        subject={driverEvidence ? `${driverEvidence.status} · ${driverEvidence.value}/100` : undefined}
+        evidence={driverEvidence?.evidence ?? null}
+      />
     </div>
   );
 }
